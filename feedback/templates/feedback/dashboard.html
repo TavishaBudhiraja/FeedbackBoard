@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Feedback Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Google Charts -->
+    <script src="https://www.gstatic.com/charts/loader.js"></script>
+
+    <style>
+        body {
+            background: #f8fafc;
+            font-family: Arial, sans-serif;
+            color: #111827;
+        }
+
+        .dashboard-wrapper {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 32px;
+        }
+
+        .top-bar {
+            background: linear-gradient(135deg, #0f172a, #4338ca);
+            color: white;
+            border-radius: 24px;
+            padding: 34px;
+            margin-bottom: 28px;
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .top-bar h1 {
+            font-size: 34px;
+            font-weight: 900;
+            margin-bottom: 8px;
+        }
+
+        .top-bar p {
+            color: #dbeafe;
+            margin-bottom: 0;
+            font-weight: 600;
+        }
+
+        .btn-form {
+            background: white;
+            color: #4338ca;
+            padding: 12px 18px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 900;
+        }
+
+        .btn-form:hover {
+            color: #4338ca;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+            border: 1px solid #e5e7eb;
+        }
+
+        .stat-label {
+            color: #6b7280;
+            font-weight: 800;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 34px;
+            font-weight: 900;
+            color: #111827;
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 22px;
+            margin-bottom: 24px;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 22px;
+            padding: 24px;
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+            border: 1px solid #e5e7eb;
+        }
+
+        .chart-title {
+            font-size: 20px;
+            font-weight: 900;
+            margin-bottom: 4px;
+        }
+
+        .chart-subtitle {
+            color: #6b7280;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 18px;
+        }
+
+        .chart-box {
+            width: 100%;
+            height: 360px;
+        }
+
+        .table-card {
+            background: white;
+            border-radius: 22px;
+            padding: 24px;
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+            border: 1px solid #e5e7eb;
+        }
+
+        .table th {
+            color: #374151;
+            font-size: 13px;
+        }
+
+        .table td {
+            vertical-align: middle;
+            font-size: 14px;
+        }
+
+        .anonymous {
+            color: #6b7280;
+            font-style: italic;
+        }
+
+        @media (max-width: 992px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .chart-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .top-bar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="dashboard-wrapper">
+
+    <div class="top-bar">
+        <div>
+            <h1>Feedback Dashboard</h1>
+            <p>Summary of all feedback responses collected from the form.</p>
+        </div>
+
+        <a href="{% url 'home' %}" class="btn-form">Open Feedback Form</a>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">TOTAL FEEDBACKS</div>
+            <div class="stat-value">{{ total_feedbacks }}</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-label">OVERALL AVERAGE</div>
+            <div class="stat-value">{{ overall_average }}/5</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-label">QUESTIONS</div>
+            <div class="stat-value">4</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-label">DATA SOURCE</div>
+            <div class="stat-value">Live</div>
+        </div>
+    </div>
+
+    <div class="chart-grid">
+        <div class="chart-card">
+            <div class="chart-title">Average Rating by Question</div>
+            <div class="chart-subtitle">Bar graph showing average score for each feedback question.</div>
+            <div id="questionBarChart" class="chart-box"></div>
+        </div>
+
+        <div class="chart-card">
+            <div class="chart-title">Satisfaction Split</div>
+            <div class="chart-subtitle">Pie chart based on average feedback score.</div>
+            <div id="satisfactionPieChart" class="chart-box"></div>
+        </div>
+    </div>
+
+    <div class="chart-card mb-4">
+        <div class="chart-title">Rating Distribution</div>
+        <div class="chart-subtitle">Column chart showing how many responses fall under each rating level.</div>
+        <div id="ratingColumnChart" class="chart-box"></div>
+    </div>
+
+    <div class="table-card">
+        <div class="chart-title mb-3">Recent Feedback Responses</div>
+
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Service</th>
+                    <th>Response</th>
+                    <th>Staff</th>
+                    <th>Overall</th>
+                    <th>Average</th>
+                    <th>Comments</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for item in feedbacks %}
+                    <tr>
+                        <td>
+                            {% if item.name %}
+                                {{ item.name }}
+                            {% else %}
+                                <span class="anonymous">Anonymous</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ item.service_quality }}</td>
+                        <td>{{ item.response_time }}</td>
+                        <td>{{ item.staff_behavior }}</td>
+                        <td>{{ item.overall_experience }}</td>
+                        <td>{{ item.average_rating }}</td>
+                        <td>
+                            {% if item.comments %}
+                                {{ item.comments }}
+                            {% else %}
+                                <span class="anonymous">No comment</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted">
+                            No feedback submitted yet.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<script>
+    google.charts.load("current", {"packages": ["corechart", "bar"]});
+    google.charts.setOnLoadCallback(drawCharts);
+
+    function drawCharts() {
+        drawQuestionBarChart();
+        drawSatisfactionPieChart();
+        drawRatingColumnChart();
+    }
+
+    function drawQuestionBarChart() {
+        const chartData = {{ question_average_data|safe }};
+        const data = google.visualization.arrayToDataTable(chartData);
+
+        const options = {
+            legend: { position: "none" },
+            height: 350,
+            chartArea: { width: "72%", height: "72%" },
+            hAxis: {
+                minValue: 0,
+                maxValue: 5,
+                title: "Average Rating"
+            },
+            vAxis: {
+                title: "Question"
+            },
+            colors: ["#4338ca"]
+        };
+
+        const chart = new google.visualization.BarChart(
+            document.getElementById("questionBarChart")
+        );
+
+        chart.draw(data, options);
+    }
+
+    function drawSatisfactionPieChart() {
+        const chartData = {{ satisfaction_data|safe }};
+        const data = google.visualization.arrayToDataTable(chartData);
+
+        const options = {
+            height: 350,
+            chartArea: { width: "88%", height: "78%" },
+            pieHole: 0.42,
+            colors: ["#16a34a", "#f59e0b", "#dc2626"],
+            legend: { position: "bottom" }
+        };
+
+        const chart = new google.visualization.PieChart(
+            document.getElementById("satisfactionPieChart")
+        );
+
+        chart.draw(data, options);
+    }
+
+    function drawRatingColumnChart() {
+        const chartData = {{ rating_distribution_data|safe }};
+        const data = google.visualization.arrayToDataTable(chartData);
+
+        const options = {
+            legend: { position: "none" },
+            height: 350,
+            chartArea: { width: "82%", height: "72%" },
+            vAxis: {
+                minValue: 0,
+                title: "Number of Responses"
+            },
+            hAxis: {
+                title: "Rating"
+            },
+            colors: ["#0f172a"]
+        };
+
+        const chart = new google.visualization.ColumnChart(
+            document.getElementById("ratingColumnChart")
+        );
+
+        chart.draw(data, options);
+    }
+
+    window.addEventListener("resize", drawCharts);
+</script>
+
+</body>
+</html>
