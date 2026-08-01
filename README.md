@@ -69,7 +69,7 @@ python -m venv f1
 On Windows:
 
 ```bash
-f1\Scripts\activate
+.\f1\Scripts\activate
 ```
 
 On macOS or Linux:
